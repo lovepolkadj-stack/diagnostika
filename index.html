@@ -257,6 +257,886 @@ button{font-family:'Manrope',sans-serif;font-size:15px;font-weight:500;padding:1
   </div>
   <div class="resbody" id="res-body"></div>
   <div style="padding:0 1.75rem 1.75rem">
+    <div id="send-status" style="font-size:13px;color:var(--green);margin-bottom:1rem;min-height:20px"></div>
+    <button class="dlbtn" id="btn-dl">Скачать результаты (.txt)</button>
+    <div id="txt-export" style="display:none;margin-top:1rem">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Если скачивание не работает — скопируйте текст ниже и отправьте исследователю:</div>
+      <textarea id="txt-export-area" readonly style="width:100%;min-height:180px;font-size:11px;font-family:monospace;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text2);line-height:1.5"></textarea>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ======= КТО Я =======
+let waiCount = 0;
+function addWai(){
+  waiCount++;
+  const g = document.getElementById('wai-grid');
+  const row = document.createElement('div');
+  row.className='wai-row';
+  row.id='wai-row-'+waiCount;
+  row.innerHTML=`<div class="wai-num">${waiCount}</div>
+    <input class="wai-inp" id="wai-t-${waiCount}" type="text" placeholder="Я — ..."/>
+    <select class="wai-sel" id="wai-s-${waiCount}">
+      <option value="">— оценка —</option>
+      <option value="+">+ (нравится)</option>
+      <option value="-">− (не нравится)</option>
+      <option value="±">± (и то, и то)</option>
+      <option value="?">? (не знаю)</option>
+    </select>`;
+  g.appendChild(row);
+}
+for(let i=0;i<20;i++) addWai();
+
+// ======= МИС =======
+const misQ=[
+"Мои слова довольно редко расходятся с делами.",
+"Случайному человеку я, скорее всего, покажусь человеком приятным.",
+"К чужим проблемам я всегда отношусь с тем же пониманием, что и к своим.",
+"У меня нередко возникает чувство, что то, о чём я с собой мысленно разговариваю, мне неприятно.",
+"Думаю, что все мои знакомые относятся ко мне с симпатией.",
+"Самое разумное, что может сделать человек в своей жизни, это не противиться собственной судьбе.",
+"У меня достаточно способностей и энергии воплотить в жизнь задуманное.",
+"Если бы я раздвоился, то мне было бы довольно интересно общаться со своим двойником.",
+"Я не способен причинять душевную боль самым любимым и родным мне людям.",
+"Я считаю, что не грех иногда пожалеть самого себя.",
+"Совершив какой-то промах, я часто не могу понять, как же мне могло прийти в голову, что из задуманного могло получиться что-нибудь хорошее.",
+"Чаще всего я одобряю свои планы и поступки.",
+"В моей личности есть, наверное, что-то такое, что способно вызвать у других острую неприязнь.",
+"Когда я пытаюсь оценить себя, я прежде всего вижу свои недостатки.",
+"У меня не получается быть для любимого человека интересным длительное время.",
+"Можно сказать, что я ценю себя достаточно высоко.",
+"Мой внутренний голос редко подсказывает мне то, с чем бы я в конце концов не согласился.",
+"Многие мои знакомые не принимают меня так уж всерьёз.",
+"Бывало, и не раз, что я сам остро ненавидел себя.",
+"Мне очень мешает недостаток энергии, воли и целеустремлённости.",
+"В моей жизни возникали такие обстоятельства, когда я шёл на сделку с собственной совестью.",
+"Иногда я сам себя плохо понимаю.",
+"Порой мне бывает мучительно больно общаться с самим собой.",
+"Думаю, что без труда смог бы найти общий язык с любым разумным и знающим человеком.",
+"Если я и отношусь к кому-нибудь с укоризной, то прежде всего к самому себе.",
+"Иногда я сомневаюсь, можно ли любить меня по-настоящему.",
+"Нередко мои споры с самим собой обрываются мыслью, что всё равно выйдет не так, как я решил.",
+"Моё отношение к самому себе можно назвать дружеским.",
+"Вряд ли найдутся люди, которым я не по душе.",
+"Часто я не без издёвки подшучиваю над собой.",
+"Если бы моё второе «Я» существовало, то для меня это был бы довольно скучный партнёр по общению.",
+"Мне представляется, что я достаточно сложился как личность, и поэтому не трачу много сил на то, чтобы в чём-то стать другим.",
+"В целом меня устраивает то, какой я есть.",
+"К сожалению, слишком многие не разделяют моих взглядов на жизнь.",
+"Я вполне могу сказать, что уважаю сам себя.",
+"Я думаю, что имею умного и надёжного советчика в себе самом.",
+"Сам у себя я довольно часто вызываю чувство раздражения.",
+"Я часто, но довольно безуспешно пытаюсь в себе что-то изменить.",
+"Я думаю, что моя личность гораздо интереснее и богаче, чем это может показаться на первый взгляд.",
+"Мои достоинства вполне перевешивают мои недостатки.",
+"Я редко остаюсь непонятым в самом важном для меня.",
+"Думаю, что другие в целом оценивают меня достаточно высоко.",
+"То, что со мной случается, — это дело моих собственных рук.",
+"Если я спорю с собой, то всегда уверен, что найду единственно правильное решение.",
+"Когда со мной случаются неприятности, как правило, я говорю: «И поделом тебе».",
+"Я не считаю, что достаточно духовно интересен для того, чтобы быть притягательным для многих людей.",
+"У меня нередко возникает сомнение: а таков ли я на самом деле, каким себе представляюсь?",
+"Я не способен на измену даже в мыслях.",
+"Чаще всего я думаю о себе с дружеской иронией.",
+"Мне кажется, что мало кто может подумать обо мне плохо.",
+"Уверен, что на меня можно положиться в самых ответственных делах.",
+"Я могу сказать, что в целом я контролирую свою судьбу.",
+"Я никогда не выдаю понравившиеся мне чужие мысли за свои.",
+"Каким бы я ни казался окружающим, я то знаю, что в глубине души я лучше, чем большинство других.",
+"Я хотел бы оставаться таким, какой я есть.",
+"Я всегда рад критике в свой адрес, если она обоснована и справедлива.",
+"Мне кажется, что если бы таких людей, как я, было больше, то жизнь изменилась бы в лучшую сторону.",
+"Моё мнение имеет достаточный вес в глазах окружающих.",
+"Что-то мешает мне понять себя по-настоящему.",
+"Во мне есть немало такого, что вряд ли вызывает симпатию.",
+"В сложных обстоятельствах я обычно не жду, пока проблемы разрешатся сами собой.",
+"Иногда я пытаюсь выдать себя не за того, кто я есть.",
+"Быть снисходительным к собственным слабостям — вполне естественно.",
+"Я убедился, что глубокое проникновение в себя — малоприятное и довольно рискованное занятие.",
+"Я никогда не раздражаюсь и не злюсь без особых на то причин.",
+"У меня бывают такие моменты, когда я понимал, что меня есть за что презирать.",
+"Я часто чувствую, что мало влияю на то, что со мной происходит.",
+"Именно богатство и глубина моего внутреннего мира и определяют мою ценность как личности.",
+"Долгие споры с собой чаще всего оставляют горький осадок в моей душе, чем приносят облегчение.",
+"Думаю, что общение со мной доставляет людям искреннее удовольствие.",
+"Если говорить откровенно, иногда я бываю очень неприятен.",
+"Можно сказать, что я себе нравлюсь.",
+"Я человек надёжный.",
+"Осуществление моих желаний мало зависит от везения.",
+"Моё внутреннее «Я» всегда мне интересно.",
+"Мне очень просто убедить себя не расстраиваться по пустякам.",
+"Близким людям свойственно меня недооценивать.",
+"У меня в жизни нередко бывают минуты, когда я сам себе противен.",
+"Мне кажется, что я всё-таки не умею злиться на себя по-настоящему.",
+"Я убедился, что в серьёзных делах на меня лучше не рассчитывать.",
+"Порой мне кажется, что я какой-то странный.",
+"Я не склонен пасовать перед трудностями.",
+"Моё собственное «Я» не представляется мне чем-то достойным глубокого внимания.",
+"Мне кажется, что, глубоко обдумывая свои внутренние проблемы, я научился гораздо лучше себя понимать.",
+"Сомневаюсь, что вызываю симпатию у большинства окружающих.",
+"Мне случалось совершать такие поступки, которым вряд ли можно найти оправдание.",
+"Где-то в глубине души я считаю себя слабаком.",
+"Если я искренне обвиняю себя в чём-то, то, как правило, обличительного запала хватает ненадолго.",
+"Мой характер, каким бы он ни был, вполне меня устраивает.",
+"Я вполне представляю себе, что меня ждёт впереди.",
+"Иногда мне бывает трудно найти общий язык со своим внутренним «Я».",
+"Мои мысли о себе по большей части сводятся к обвинениям в собственный адрес.",
+"Я не хотел бы сильно меняться даже в лучшую сторону, потому что каждое изменение — это потеря какой-то дорогой частицы самого себя.",
+"В результате моих действий слишком часто получается совсем не то, на что я рассчитывал.",
+"Вряд ли во мне есть что-то, чего бы я не знал.",
+"Мне ещё многого не хватает, чтобы с уверенностью сказать себе: «Да, я вполне созрел как личность».",
+"Во мне вполне мирно уживаются как мои достоинства, так и мои недостатки.",
+"Иногда я оказываю «бескорыстную» помощь людям только для того, чтобы лучше выглядеть в собственных глазах.",
+"Мне слишком часто и безуспешно приходится оправдываться перед самим собой.",
+"Те, кто меня не любит, просто не знают, какой я человек.",
+"Убедить себя в чём-то не составляет для меня большого труда.",
+"Я не испытываю недостатка в близких и понимающих меня людях.",
+"Мне кажется, что мало кто уважает меня по-настоящему.",
+"Если не мелочиться, то в целом меня не в чём упрекнуть.",
+"Я сам создал себя таким, каков я есть.",
+"Мнение других обо мне вполне совпадает с моим собственным.",
+"Мне бы очень хотелось во многом себя переделать.",
+"Ко мне относятся так, как я того заслуживаю.",
+"Думаю, что моя судьба сложится всё равно не так, как бы мне хотелось теперь.",
+"Уверен, что в жизни я на своём месте."
+];
+// key: arrays of 1-based question numbers that score 1 if answered YES, and NO
+// Format: {yes:[...], no:[...]}
+const misKey={
+  "Закрытость":        {yes:[1,3,9,48,53,56,65],   no:[21,62,86,98]},
+  "Самоуверенность":   {yes:[7,24,30,35,36,51,52,58,61,73,82], no:[20,80,103]},
+  "Саморуководство":   {yes:[43,44,45,74,76,84,90,105,106,108,110], no:[109]},
+  "Отражённое самоотношение":{yes:[2,5,29,41,42,50,102], no:[13,18,34,85]},
+  "Самоценность":      {yes:[8,16,39,54,57,68,70,75,100], no:[15,26,31,46,83]},
+  "Самопринятие":      {yes:[10,12,17,28,40,49,63,72,77,79,88,97], no:[]},
+  "Самопривязанность": {yes:[6,32,33,55,89,93,95,101,104], no:[96,107]},
+  "Внутренняя конфликтность":{yes:[4,11,22,23,27,38,47,59,64,67,69,81,91,94,99], no:[]},
+  "Самообвинение":     {yes:[14,19,25,37,60,66,71,78,87,92], no:[]}
+};
+// Стены (raw -> sten) for each scale
+const misStens={
+  "Закрытость":       [[0,0],[0,0],[1,1],[2,3],[4,5],[6,7],[8,8],[9,9],[10,10],[11,11]],
+  "Самоуверенность":  [[0,1],[2,2],[3,4],[5,6],[7,8],[9,9],[10,11],[12,12],[13,13],[14,14]],
+  "Саморуководство":  [[0,1],[2,2],[3,3],[4,5],[6,6],[7,7],[8,8],[9,10],[11,11],[12,12]],
+  "Отражённое самоотношение":[[0,0],[1,1],[2,2],[3,4],[5,5],[6,7],[8,8],[9,9],[10,10],[11,11]],
+  "Самоценность":     [[0,1],[2,2],[3,3],[4,5],[6,7],[8,8],[9,10],[11,11],[12,12],[13,14]],
+  "Самопринятие":     [[0,1],[2,2],[3,4],[5,5],[6,7],[8,8],[9,9],[10,10],[11,11],[12,12]],
+  "Самопривязанность":[[0,0],[1,1],[2,2],[3,3],[4,5],[6,6],[7,8],[9,9],[10,10],[11,11]],
+  "Внутренняя конфликтность":[[0,0],[1,1],[2,2],[3,4],[5,7],[8,10],[11,12],[13,13],[14,14],[15,15]],
+  "Самообвинение":    [[0,0],[1,1],[2,2],[3,4],[5,5],[6,7],[8,8],[9,9],[10,10],[10,10]]
+};
+function rawToSten(scaleName, raw){
+  const t=misStens[scaleName];
+  for(let s=0;s<t.length;s++){if(raw>=t[s][0]&&raw<=t[s][1])return s+1;}
+  return raw>t[t.length-1][1]?10:1;
+}
+const mc=document.getElementById('mis-container');
+misQ.forEach((q,i)=>{
+  mc.innerHTML+=`<div class="card" style="margin-bottom:.6rem">
+    <span class="qnum">${i+1} из ${misQ.length}</span>
+    <div class="qlabel">${q}</div>
+    <div class="rgroup mis-yn">
+      <label class="ropt"><input type="radio" name="mis${i+1}" value="yes"> Да</label>
+      <label class="ropt"><input type="radio" name="mis${i+1}" value="no"> Нет</label>
+    </div>
+  </div>`;
+});
+
+// ======= КАРПОВ =======
+const karpQ=[
+"Прочитав хорошую книгу, я всегда потом долго думаю о ней; хочется её с кем-нибудь обсудить.",
+"Когда меня вдруг неожиданно о чём-то спросят, я могу ответить первое, что пришло в голову.",
+"Прежде чем снять трубку телефона, чтобы позвонить по делу, я обычно мысленно планирую предстоящий разговор.",
+"Совершив какой-то промах, я долго потом не могу отвлечься от мыслей о нём.",
+"Когда я размышляю над чем-то или беседую с другим человеком, мне бывает интересно вдруг вспомнить, что послужило началом цепочки мыслей.",
+"Приступая к трудному заданию, я стараюсь не думать о предстоящих трудностях.",
+"Главное для меня — представить конечную цель своей деятельности, а детали имеют второстепенное значение.",
+"Бывает, что я не могу понять, почему кто-либо недоволен мною.",
+"Я часто ставлю себя на место другого человека.",
+"Для меня важно в деталях представлять себе ход предстоящей работы.",
+"Мне было бы трудно написать серьёзное письмо, если бы я заранее не составил план.",
+"Я предпочитаю действовать, а не размышлять над причинами своих неудач.",
+"Я довольно легко принимаю решение относительно дорогой покупки.",
+"Как правило, что-то задумав, я прокручиваю в голове свои замыслы, уточняя детали, рассматривая все варианты.",
+"Я беспокоюсь о своём будущем.",
+"Думаю, что во множестве ситуаций надо действовать быстро, руководствуясь первой пришедшей в голову мыслью.",
+"Порой я принимаю необдуманные решения.",
+"Закончив разговор, я, бывает, продолжаю вести его мысленно, приводя всё новые и новые аргументы в защиту своей точки зрения.",
+"Если происходит конфликт, то, размышляя над тем, кто в нём виноват, я в первую очередь начинаю с себя.",
+"Прежде чем принять решение, я всегда стараюсь всё тщательно обдумать и взвесить.",
+"У меня бывают конфликты от того, что я порой не могу предугадать, какого поведения ожидают от меня окружающие.",
+"Бывает, что, обдумывая разговор с другим человеком, я как бы мысленно веду с ним диалог.",
+"Я стараюсь не задумываться над тем, какие мысли и чувства вызывают в других людях мои слова и поступки.",
+"Прежде чем сделать замечание другому человеку, я обязательно подумаю, в каких словах это лучше сделать, чтобы его не обидеть.",
+"Решая трудную задачу, я думаю над ней даже тогда, когда занимаюсь другими делами.",
+"Если я с кем-то ссорюсь, то в большинстве случаев не считаю себя виноватым.",
+"Редко бывает так, что я жалею о сказанном."
+];
+const karpDirect=[1,3,4,5,9,10,11,14,15,18,19,20,22,24,25];
+const kc=document.getElementById('karp-container');
+karpQ.forEach((q,i)=>{
+  kc.innerHTML+=`<div class="card" style="margin-bottom:.6rem">
+    <span class="qnum">${i+1} из ${karpQ.length}</span>
+    <div class="qlabel">${q}</div>
+    <div class="lrow" style="justify-content:center">
+      ${[1,2,3,4,5,6,7].map(v=>`<label class="lopt"><input type="radio" name="karp${i+1}" value="${v}"><div class="lcirc">${v}</div></label>`).join('')}
+    </div>
+    <div class="llabrow"><span>Абсолютно неверно</span><span>Совершенно верно</span></div>
+  </div>`;
+});
+
+// ======= ШКАЛА ЭКЗИСТЕНЦИИ =======
+const exQ=[
+"Часто я бросаю даже важную деятельность, если усилия, которые требуются, становятся слишком неприятными.",
+"Я чувствую, что те задачи, которые передо мной стоят, представляют для меня ценность.",
+"Для меня что-то имеет значение лишь тогда, когда это соответствует моему желанию.",
+"В моей жизни нет ничего ценного.",
+"Больше всего мне нравится заниматься самим собой — моими заботами, желаниями, мечтами, страхами.",
+"Обычно я бываю рассеян.",
+"Даже если я многое сделал, я не удовлетворён, потому что чувствую, что не сделал того, что было важным.",
+"Я всегда ориентируюсь на ожидания других и поступаю в соответствии с этим.",
+"Мне свойственно откладывать неприятные решения в долгий ящик.",
+"Меня легко отвлечь, даже если я занят тем, что мне нравится.",
+"В моей жизни нет ничего такого, чему бы я хотел себя посвятить.",
+"Я часто не понимаю, почему именно я должен это делать.",
+"Я думаю, что та жизнь, которую я веду, ни на что не годна.",
+"Мне трудно понимать смысл вещей.",
+"Я могу обходиться с самим собой как с хорошим другом.",
+"Я слишком мало времени уделяю тому, что является по-настоящему важным.",
+"У меня сразу никогда не бывает ясности по поводу того, что я могу сделать в какой-либо ситуации.",
+"Я многое делаю только потому, что я должен это делать, а не потому, что я хочу это делать.",
+"Если возникают проблемы, я легко теряю голову.",
+"Я часто делаю то, что можно с таким же успехом сделать и позже.",
+"Мне каждый раз интересно, что принесёт день.",
+"В большинстве случаев, только начав действовать, я понимаю, какие последствия имеет принятое решение.",
+"Если я должен принять решение, я не могу положиться на свои чувства.",
+"Неуверенность в исходе дела удерживает меня от его выполнения, даже если я болею за него душой.",
+"Я никогда точно не знаю, за что я отвечаю.",
+"Я чувствую себя внутренне свободным(ой).",
+"Из-за того, что жизнь не дала исполниться моим желаниям, я чувствую себя обделённым(ой) ею.",
+"Когда я вижу, что у меня нет выбора, я чувствую облегчение.",
+"Есть ситуации, в которых я себя чувствую совсем беспомощным(ой).",
+"Я делаю много такого, в чём я по-настоящему не разбираюсь.",
+"Обычно я не знаю, что в ситуации является важным.",
+"Исполнение собственных желаний стоит для меня на первом месте.",
+"Мне трудно проникнуться чувствами других.",
+"Было бы лучше, если бы меня не было.",
+"Многое из того, с чем я связан, чуждо мне.",
+"Мне нравится формировать собственное мнение.",
+"Я чувствую, что разрываюсь, потому что одновременно делаю так много вещей.",
+"Мне не хватает сил, чтобы довести до конца даже самые важные вещи.",
+"Я делаю многое просто так, особенно не задумываясь.",
+"Ситуация для меня лишь тогда представляет интерес, когда она соответствует моим желаниям.",
+"Когда я болею, то не знаю, что делать с этим временем.",
+"Я редко вижу, что у меня есть разные возможности для действия в ситуации.",
+"Я нахожу окружающий мир однообразным.",
+"Вопрос, хочу ли я что-то сделать, редко встаёт передо мной, потому что чаще всего есть то, что я должен(а) делать.",
+"В моей жизни нет ничего действительно хорошего, потому что всё имеет свои за и против.",
+"Моя внутренняя несвобода и зависимость доставляют мне много хлопот."
+];
+// reverse items (1-based): 2,15,21,26,36
+const exReverse=[2,15,21,26,36];
+// scales (1-based question numbers)
+const exScales={
+  SD:[3,5,19,32,40,42,43,44],
+  ST:[2,4,11,12,13,14,21,27,33,34,35,36,41,45],
+  F:[9,10,15,17,18,23,24,26,28,31,46],
+  V:[1,6,7,8,16,20,22,25,29,30,37,38,39]
+};
+const exOpts=["Верно","Верно за редкими исключениями","Скорее верно","Скорее не верно","Не верно за редкими исключениями","Не верно"];
+const exc=document.getElementById('ex-container');
+exQ.forEach((q,i)=>{
+  exc.innerHTML+=`<div class="card" style="margin-bottom:.6rem">
+    <span class="qnum">${i+1} из ${exQ.length}</span>
+    <div class="qlabel">${q}</div>
+    <div class="rgroup">
+      ${exOpts.map((o,v)=>`<label class="ropt"><input type="radio" name="ex${i+1}" value="${v+1}"> ${o}</label>`).join('')}
+    </div>
+  </div>`;
+});
+
+// ======= НП =======
+const npStems=[
+  "Рядом с клиентом я обычно чувствую...",
+  "Как будущий психолог-консультант, я понимаю себя как...",
+  "Самое сложное в консультировании для меня — это...",
+  "Когда я думаю о себе как о терапевте, мне...",
+  "Мои личные особенности в профессии — это...",
+  "Граница между мной и клиентом — это...",
+  "Профессия психолога-консультанта для меня — это прежде всего..."
+];
+const npc=document.getElementById('np-container');
+npStems.forEach((s,i)=>{
+  npc.innerHTML+=`<div class="card" style="margin-bottom:.85rem">
+    <span class="qnum">${i+1} из ${npStems.length}</span>
+    <div class="stem">${s}</div>
+    <textarea id="np${i}" placeholder="Продолжите предложение..."></textarea>
+  </div>`;
+});
+
+// ======= NAVIGATION =======
+let cur=0;
+const total=6;
+function go(n){
+  document.getElementById('sec-'+cur).classList.remove('active');
+  cur=n;
+  document.getElementById('sec-'+n).classList.add('active');
+  updatePg();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function updatePg(){
+  const pct=Math.round((cur/total)*100);
+  document.getElementById('pgfill').style.width=pct+'%';
+  document.getElementById('pgpct').textContent=pct+'%';
+  document.getElementById('pgtxt').textContent=cur===0?'Введение':`Раздел ${cur} из ${total-1}`;
+  for(let i=0;i<=5;i++){
+    const d=document.getElementById('d'+i);
+    if(!d)continue;
+    d.className='dot';
+    if(i<cur)d.classList.add('done');
+    else if(i===cur)d.classList.add('active');
+  }
+}
+document.querySelectorAll('.ropt').forEach(opt=>{
+  opt.querySelector('input').addEventListener('change',function(){
+    const nm=this.name;
+    document.querySelectorAll(`input[name="${nm}"]`).forEach(el=>el.closest('.ropt').classList.remove('sel'));
+    this.closest('.ropt').classList.add('sel');
+  });
+});
+
+// ======= SCORING =======
+function getR(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value:null;}
+
+function scoreMIS(){
+  const raw={};
+  Object.keys(misKey).forEach(sc=>{
+    let score=0;
+    misKey[sc].yes.forEach(n=>{if(getR('mis'+n)==='yes')score++;});
+    misKey[sc].no.forEach(n=>{if(getR('mis'+n)==='no')score++;});
+    raw[sc]=score;
+  });
+  const stens={};
+  Object.keys(raw).forEach(sc=>{stens[sc]=rawToSten(sc,raw[sc]);});
+  return{raw,stens};
+}
+
+function scoreKarpov(){
+  let total=0;
+  karpQ.forEach((_,i)=>{
+    const n=i+1;
+    const v=parseInt(getR('karp'+n)||'0');
+    if(karpDirect.includes(n))total+=v;
+    else total+=(8-v);
+  });
+  let sten=0;
+  const stenTable=[[0,80],[1,100],[2,107],[3,113],[4,122],[5,130],[6,139],[7,147],[8,156],[9,171],[10,999]];
+  for(let s=0;s<stenTable.length;s++){if(total<=stenTable[s][1]){sten=stenTable[s][0];break;}}
+  let level=sten>=7?'высокий':sten>=4?'средний':'низкий';
+  return{total,sten,level};
+}
+
+function scoreEx(){
+  const vals={};
+  exQ.forEach((_,i)=>{
+    const n=i+1;
+    let v=parseInt(getR('ex'+n)||'0');
+    if(exReverse.includes(n))v=7-v;
+    vals[n]=v;
+  });
+  const scores={SD:0,ST:0,F:0,V:0};
+  Object.keys(exScales).forEach(sc=>{
+    exScales[sc].forEach(n=>{scores[sc]+=(vals[n]||0);});
+  });
+  const Person=scores.SD+scores.ST;
+  const Exist=scores.F+scores.V;
+  const G=Person+Exist;
+  return{scores,Person,Exist,G};
+}
+
+// ======= SUBMIT =======
+function submit(){
+  document.getElementById('sec-5').classList.remove('active');
+  document.getElementById('pgfill').style.width='100%';
+  document.getElementById('pgpct').textContent='100%';
+  document.getElementById('pgtxt').textContent='Результаты';
+
+  const mis=scoreMIS();
+  const karp=scoreKarpov();
+  const ex=scoreEx();
+
+  const code=document.getElementById('m-code').value||'—';
+  const stage=getR('stage')==='before'?'До курса':'После курса';
+  document.getElementById('res-meta').textContent=`Код участника: ${code} · ${stage}`;
+
+  let html='';
+
+  // МИС
+  html+=`<div class="scblock"><div class="scname">МИС — Самоотношение (С.Р. Пантилеев)</div>`;
+  const misInterp={
+    "Закрытость":{hi:"Выраженная закрытость, защитное поведение, избегание открытого самоотношения.",mid:"Избирательная открытость к себе, ситуативная рефлексия.",lo:"Открытость, внутренняя честность, развитая рефлексия."},
+    "Самоуверенность":{hi:"Высокое самоуважение, уверенность в своих силах.",mid:"Ситуативная уверенность в себе.",lo:"Неуверенность в своих возможностях, сомнение в способностях."},
+    "Саморуководство":{hi:"Ощущение себя как источника собственной активности и развития.",mid:"Ситуативный внутренний контроль.",lo:"Ощущение подвластности внешним обстоятельствам."},
+    "Отражённое самоотношение":{hi:"Ощущение принятости и ценности в глазах других.",mid:"Избирательное восприятие отношения окружающих.",lo:"Ощущение неспособности вызвать уважение и симпатию."},
+    "Самоценность":{hi:"Высокая оценка своего духовного потенциала, уникальности личности.",mid:"Избирательная самооценка, частичное признание своей ценности.",lo:"Сомнение в уникальности, недооценка собственного Я."},
+    "Самопринятие":{hi:"Принятие себя во всей полноте, позитивный фон самовосприятия.",mid:"Избирательное принятие себя.",lo:"Общий негативный фон восприятия себя, критичность."},
+    "Самопривязанность":{hi:"Ригидность Я-концепции, сопротивление изменениям.",mid:"Избирательное стремление к изменению себя.",lo:"Высокая готовность к изменению, открытость новому опыту."},
+    "Внутренняя конфликтность":{hi:"Постоянный самоконтроль, самокопание, конфликт между реальным и идеальным Я.",mid:"Ситуативная самокритика.",lo:"Позитивный баланс самооценки, принятие себя."},
+    "Самообвинение":{hi:"Склонность к самообвинению, видение прежде всего своих недостатков.",mid:"Избирательное самообвинение.",lo:"Тенденция к отрицанию вины, перенос ответственности вовне."}
+  };
+  Object.keys(mis.stens).forEach(sc=>{
+    const st=mis.stens[sc];
+    const pct=Math.round((st/10)*100);
+    const lev=st>=8?'hi':st<=3?'lo':'mid';
+    const txt=misInterp[sc]?misInterp[sc][lev]:'';
+    html+=`<div class="scrow">
+      <div class="sclabel">${sc}</div>
+      <div class="scbar"><div class="scfill" style="width:${pct}%"></div></div>
+      <div class="scval">${st} ст.</div>
+    </div>
+    <div class="scinterp ${lev}">${txt}</div>`;
+  });
+  html+=`</div>`;
+
+  // Карпов
+  const klevTxt={высокий:'Высокоразвитая рефлексивность. Выраженная способность осознавать и анализировать свои состояния, переживания и профессиональную позицию.',средний:'Средний уровень рефлексивности. Ситуативная способность к самоанализу.',низкий:'Низкий уровень рефлексивности. Тенденция к действию без предварительного анализа собственных состояний.'};
+  const kpct=Math.round((karp.sten/10)*100);
+  const klev=karp.sten>=7?'hi':karp.sten<=3?'lo':'mid';
+  html+=`<div class="scblock"><div class="scname">Рефлексивность (А.В. Карпов)</div>
+    <div class="scrow">
+      <div class="sclabel">Рефлексивность</div>
+      <div class="scbar"><div class="scfill" style="width:${kpct}%"></div></div>
+      <div class="scval">${karp.sten} ст.</div>
+    </div>
+    <div class="scinterp ${klev}">${klevTxt[karp.level]} (сумма баллов: ${karp.total})</div>
+  </div>`;
+
+  // Шкала экзистенции
+  const exMax={SD:48,ST:84,F:66,V:78,Person:132,Exist:144,G:276};
+  const exLabels={SD:'Самодистанцирование',ST:'Самотрансценденция',F:'Свобода',V:'Ответственность',Person:'Person (SD+ST)',Exist:'Экзистенция (F+V)',G:'Экзистенциальная исполненность (G)'};
+  const exOrder=['SD','ST','F','V','Person','Exist','G'];
+  const exVals={...ex.scores,Person:ex.Person,Exist:ex.Exist,G:ex.G};
+  html+=`<div class="scblock"><div class="scname">Шкала экзистенции (А. Лэнгле, К. Орглер)</div>`;
+  exOrder.forEach(k=>{
+    const v=exVals[k];
+    const mx=exMax[k];
+    const pct=mx?Math.round((v/mx)*100):0;
+    const lev=pct>=65?'hi':pct<=35?'lo':'mid';
+    html+=`<div class="scrow">
+      <div class="sclabel">${exLabels[k]}</div>
+      <div class="scbar"><div class="scfill" style="width:${pct}%"></div></div>
+      <div class="scval">${v}/${mx}</div>
+    </div>`;
+  });
+  html+=`<div class="scinterp mid" style="margin-top:.5rem">Более высокие баллы по каждой шкале соответствуют более высокому уровню экзистенциальной исполненности.</div></div>`;
+
+  // НП — показываем тексты
+  html+=`<div class="scblock"><div class="scname">Незаконченные предложения (авторская методика)</div>`;
+  npStems.forEach((s,i)=>{
+    const v=document.getElementById('np'+i)?.value||'—';
+    html+=`<div style="margin-bottom:.75rem"><div style="font-size:12px;color:var(--text3);margin-bottom:3px">${s}</div><div style="font-size:14px;padding:8px 12px;background:var(--surface2);border-radius:6px;color:var(--text)">${v}</div></div>`;
+  });
+  html+=`</div>`;
+
+  document.getElementById('res-body').innerHTML=html;
+  document.getElementById('resscreen').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  // ======= ОТПРАВКА В GOOGLE SHEETS =======
+  var SCRIPT_URL='https://script.google.com/macros/s/AKfycbzoBlYUZryMx4mfVgSxb4JxqfE2cs3T0JWKeWRIXmhP1KPX5i4hlBqvILEROWdS8qjN/exec';
+  var mis2=scoreMIS();
+  var karp2=scoreKarpov();
+  var ex2=scoreEx();
+  var payload={
+    date:new Date().toLocaleDateString('ru-RU'),
+    code:document.getElementById('m-code').value||'—',
+    year:document.getElementById('m-year').value||'—',
+    stage:getR('stage')==='before'?'До курса':'После курса',
+    therapy:getR('therapy')==='yes'?'Да':'Нет',
+    // Кто Я
+    wai_future:document.getElementById('wai-future')?.value||'',
+    wai_reflect:document.getElementById('wai-reflect')?.value||'',
+    // МИС
+    mis_stens:mis2.stens,
+    mis_raw:mis2.raw,
+    // Карпов
+    karpov_total:karp2.total,
+    karpov_sten:karp2.sten,
+    karpov_level:karp2.level,
+    // Шкала экзистенции
+    ex_SD:ex2.scores.SD,
+    ex_ST:ex2.scores.ST,
+    ex_F:ex2.scores.F,
+    ex_V:ex2.scores.V,
+    ex_Person:ex2.Person,
+    ex_Exist:ex2.Exist,
+    ex_G:ex2.G,
+    // НП
+    np_0:document.getElementById('np0')?.value||'',
+    np_1:document.getElementById('np1')?.value||'',
+    np_2:document.getElementById('np2')?.value||'',
+    np_3:document.getElementById('np3')?.value||'',
+    np_4:document.getElementById('np4')?.value||'',
+    np_5:document.getElementById('np5')?.value||'',
+    np_6:document.getElementById('np6')?.value||''
+  };
+  // Кто Я ответы
+  for(var i=1;i<=waiCount;i++){
+    payload['wai_t_'+i]=document.getElementById('wai-t-'+i)?.value||'';
+    payload['wai_s_'+i]=document.getElementById('wai-s-'+i)?.value||'';
+  }
+  // Отправка
+  var statusEl=document.getElementById('send-status');
+  fetch(SCRIPT_URL,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(){
+    if(statusEl)statusEl.textContent='✓ Данные сохранены в базу исследования';
+  }).catch(function(){
+    if(statusEl)statusEl.textContent='Не удалось отправить данные автоматически — используйте кнопку скачать.';
+  });
+}
+
+// ======= BIND BUTTONS =======
+// Called after all HTML is rendered (script at bottom of body)
+(function initButtons(){
+  var pairs=[
+    ['btn-start',function(){go(1);}],
+    ['btn-addwai',addWai],
+    ['btn-1-back',function(){go(0);}],
+    ['btn-1-next',function(){go(2);}],
+    ['btn-2-back',function(){go(1);}],
+    ['btn-2-next',function(){go(3);}],
+    ['btn-3-back',function(){go(2);}],
+    ['btn-3-next',function(){go(4);}],
+    ['btn-4-back',function(){go(3);}],
+    ['btn-4-next',function(){go(5);}],
+    ['btn-5-back',function(){go(4);}],
+    ['btn-submit',submit],
+    ['btn-dl',dlResults]
+  ];
+  pairs.forEach(function(p){
+    var el=document.getElementById(p[0]);
+    if(!el)return;
+    var fn=p[1];
+    el.onclick=function(e){e.preventDefault();fn();return false;};
+    el.ontouchend=function(e){e.preventDefault();fn();return false;};
+  });
+})();
+function dlResults(){
+  const code=document.getElementById('m-code').value||'—';
+  const yr=document.getElementById('m-year').value||'—';
+  const stage=getR('stage')==='before'?'До курса':'После курса';
+  const therapy=getR('therapy')==='yes'?'Да':'Нет';
+  const dt=new Date().toLocaleDateString('ru-RU');
+  let out=`ДИАГНОСТИКА ПРОФЕССИОНАЛЬНОЙ Я-КОНЦЕПЦИИ\n`;
+  out+=`==========================================\n`;
+  out+=`Код: ${code} | Курс: ${yr} | Этап: ${stage} | Терапия: ${therapy} | Дата: ${dt}\n\n`;
+
+  out+=`--- КТО Я? ---\n`;
+  for(let i=1;i<=waiCount;i++){
+    const t=document.getElementById('wai-t-'+i)?.value||'';
+    const s=document.getElementById('wai-s-'+i)?.value||'';
+    if(t)out+=`${i}. [${s}] ${t}\n`;
+  }
+  out+=`\nОбраз через 5 лет: ${document.getElementById('wai-future')?.value||'—'}\n`;
+  out+=`Рефлексия: ${document.getElementById('wai-reflect')?.value||'—'}\n\n`;
+
+  out+=`--- МИС (сырые баллы и стены) ---\n`;
+  const mis=scoreMIS();
+  Object.keys(mis.raw).forEach(sc=>{out+=`${sc}: сырой=${mis.raw[sc]}, стен=${mis.stens[sc]}\n`;});
+
+  out+=`\n--- РЕФЛЕКСИВНОСТЬ КАРПОВА ---\n`;
+  const karp=scoreKarpov();
+  out+=`Сумма: ${karp.total} | Стен: ${karp.sten} | Уровень: ${karp.level}\n`;
+
+  out+=`\n--- ШКАЛА ЭКЗИСТЕНЦИИ ---\n`;
+  const ex=scoreEx();
+  out+=`SD=${ex.scores.SD} ST=${ex.scores.ST} F=${ex.scores.F} V=${ex.scores.V}\n`;
+  out+=`Person=${ex.Person} Экзистенция=${ex.Exist} G=${ex.G}\n`;
+
+  out+=`\n--- НЕЗАКОНЧЕННЫЕ ПРЕДЛОЖЕНИЯ ---\n`;
+  npStems.forEach((s,i)=>{out+=`${s}\n${document.getElementById('np'+i)?.value||'—'}\n\n`;});
+
+  const blob=new Blob([out],{type:'text/plain;charset=utf-8'});
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='diagnostika_'+code+'_'+dt.replace(/\./g,'-')+'.txt';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+  }catch(e){}
+  // Always show text fallback (for messengers that block downloads)
+  var exp=document.getElementById('txt-export');
+  var area=document.getElementById('txt-export-area');
+  if(exp&&area){exp.style.display='block';area.value=out;area.select();}
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Диагностика профессиональной Я-концепции</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#EEEBE4;--border:#D5D0C7;--border2:#B8B2A7;
+  --text:#1A1815;--text2:#5C5750;--text3:#9A9590;
+  --accent:#3B5E7A;--accent-l:#E8EFF5;
+  --accent2:#6B4E7A;--accent2-l:#F0EBF5;
+  --green:#3A6B52;--green-l:#E8F3ED;
+  --warn:#7A5B2A;--warn-l:#F5EFE3;
+  --r:10px;
+}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.65;min-height:100vh}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:2rem 0 1.75rem}
+.hdr-in{max-width:780px;margin:0 auto;padding:0 2rem}
+.tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem}
+h1{font-family:'Spectral',serif;font-weight:400;font-size:1.65rem;line-height:1.3;margin-bottom:.6rem}
+.sub{font-size:13px;color:var(--text2);max-width:560px;line-height:1.6}
+.pgwrap{max-width:780px;margin:0 auto;padding:1rem 2rem 0}
+.pglabels{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px}
+.pgbar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.pgfill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease;width:0%}
+.wrap{max-width:780px;margin:0 auto;padding:0 2rem 5rem}
+.sec{display:none}.sec.active{display:block}
+.sechdr{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem 1.75rem;margin-bottom:1.25rem}
+.secnum{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.35rem}
+.sectitle{font-family:'Spectral',serif;font-weight:400;font-size:1.2rem;margin-bottom:.5rem}
+.secdesc{font-size:13px;color:var(--text2);line-height:1.6}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem 1.75rem;margin-bottom:.85rem}
+.qlabel{font-size:14px;color:var(--text);margin-bottom:.85rem;line-height:1.6}
+.qnum{color:var(--text3);font-size:11px;margin-bottom:.2rem;display:block}
+.lrow{display:flex;gap:8px;margin-top:.5rem;flex-wrap:wrap}
+.lopt{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer}
+.lopt input{display:none}
+.lcirc{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text3);background:var(--surface);transition:all .15s;cursor:pointer}
+.lopt:hover .lcirc{border-color:var(--accent);color:var(--accent);background:var(--accent-l)}
+.lopt input:checked+.lcirc{background:var(--accent);border-color:var(--accent);color:#fff}
+.llabrow{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;padding:0 2px}
+.rgroup{display:flex;flex-direction:column;gap:7px;margin-top:.5rem}
+.ropt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;font-size:13.5px;min-height:44px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}
+.ropt:hover{border-color:var(--accent);background:var(--accent-l)}
+.ropt input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.ropt.sel{border-color:var(--accent);background:var(--accent-l)}
+textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-family:'Manrope',sans-serif;font-size:14px;line-height:1.6;color:var(--text);background:var(--surface);resize:vertical;min-height:80px;margin-top:.4rem;transition:border-color .15s;outline:none}
+textarea:focus{border-color:var(--accent)}
+textarea::placeholder{color:var(--text3)}
+.inp{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'Manrope',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s;margin-top:.4rem}
+.inp:focus{border-color:var(--accent)}
+.nilist{display:flex;flex-direction:column;gap:7px;margin-top:.75rem}
+.nirow{display:flex;align-items:center;gap:10px}
+.nbadge{width:26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stem{font-size:13.5px;color:var(--text2);font-style:italic;padding:10px 14px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--accent);margin:.4rem 0}
+.navrow{display:flex;justify-content:space-between;align-items:center;margin-top:1.75rem;padding-top:1.5rem;border-top:1px solid var(--border);gap:10px}
+button{font-family:'Manrope',sans-serif;font-size:15px;font-weight:500;padding:14px 26px;border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s;border:1.5px solid;min-height:48px;min-width:48px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-appearance:none;appearance:none;display:inline-flex;align-items:center;justify-content:center;user-select:none}
+.btnp{background:var(--accent);border-color:var(--accent);color:#fff}
+.btnp:active{background:#2C4A60}
+.btns{background:var(--surface);border-color:var(--border2);color:var(--text2)}
+.btns:active{background:var(--surface2)}
+.btnok{background:var(--green);border-color:var(--green);color:#fff;padding:14px 32px;font-size:15px}
+.btnok:active{background:#2B5240}
+.dots{display:flex;gap:5px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:all .2s}
+.dot.active{background:var(--accent);width:20px;border-radius:4px}
+.dot.done{background:var(--green)}
+.notebox{background:var(--warn-l);border:1px solid #C8B090;border-radius:8px;padding:11px 15px;font-size:12.5px;color:var(--text2);margin-bottom:1rem;line-height:1.6}
+.metag{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+.mf label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:5px}
+.sep{height:1px;background:var(--border);margin:1.25rem 0}
+/* results */
+.resscreen{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.reshdr{background:var(--green);padding:2rem 2rem 1.5rem;color:#fff}
+.restitle{font-family:'Spectral',serif;font-weight:400;font-size:1.4rem;margin-bottom:.4rem}
+.ressub{font-size:13px;opacity:.85}
+.resbody{padding:1.75rem}
+.scblock{margin-bottom:1.5rem}
+.scname{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:.6rem}
+.scrow{display:flex;align-items:center;gap:12px;margin-bottom:.5rem}
+.scbar{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.scfill{height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
+.scval{font-size:13px;font-weight:600;color:var(--accent);min-width:60px;text-align:right}
+.sclabel{font-size:13px;color:var(--text);flex:0 0 200px}
+.scinterp{font-size:12px;color:var(--text2);padding:8px 12px;background:var(--surface2);border-radius:6px;margin-top:.25rem;line-height:1.5}
+.scinterp.hi{background:var(--green-l);color:#1A4030}
+.scinterp.lo{background:#FEF3F2;color:#7A2020}
+.scinterp.mid{background:var(--accent-l);color:#1A3050}
+.dlbtn{display:inline-flex;align-items:center;justify-content:center;padding:12px 24px;background:var(--accent);color:#fff;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;margin-top:.5rem;font-family:'Manrope',sans-serif;min-height:48px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-appearance:none;appearance:none;user-select:none}
+.mis-yn .rgroup{flex-direction:row;flex-wrap:wrap;gap:10px}
+.mis-yn .ropt{flex:0 0 auto;padding:8px 20px}
+/* Кто Я table */
+.wai-grid{display:grid;gap:6px;margin-top:.75rem}
+.wai-row{display:grid;grid-template-columns:28px 1fr 120px;gap:8px;align-items:center}
+.wai-num{font-size:12px;color:var(--text3);text-align:center}
+.wai-inp{border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-family:'Manrope',sans-serif;font-size:13.5px;color:var(--text);background:var(--surface);outline:none;width:100%}
+.wai-inp:focus{border-color:var(--accent)}
+.wai-sel{border:1px solid var(--border);border-radius:6px;padding:7px 8px;font-family:'Manrope',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none;width:100%;cursor:pointer}
+.wai-sel:focus{border-color:var(--accent)}
+@media(max-width:600px){
+  .metag{grid-template-columns:1fr}
+  .lcirc{width:34px;height:34px;font-size:11px}
+  h1{font-size:1.3rem}
+  .wrap{padding:0 1rem 3rem}
+  .hdr-in{padding:0 1rem}
+  .pgwrap{padding:1rem 1rem 0}
+  .wai-row{grid-template-columns:24px 1fr 100px}
+  .sclabel{flex:0 0 140px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-in">
+    <div class="tag">ВГУЭС · Кафедра психологии · Научное исследование</div>
+    <h1>Диагностика профессиональной Я-концепции</h1>
+    <p class="sub">Анкетирование проводится в рамках кандидатского исследования. Данные анонимны и используются исключительно в научных целях. По завершении вы увидите свои результаты.</p>
+  </div>
+</div>
+
+<div class="pgwrap">
+  <div class="pglabels"><span id="pgtxt">Введение</span><span id="pgpct">0%</span></div>
+  <div class="pgbar"><div class="pgfill" id="pgfill"></div></div>
+</div>
+
+<div class="wrap">
+
+<!-- SEC 0: META -->
+<div class="sec active" id="sec-0">
+  <div class="sechdr">
+    <div class="secnum">Введение</div>
+    <div class="sectitle">Перед началом</div>
+    <div class="secdesc">Вас ждёт пять разделов. Нет правильных или неправильных ответов — важна ваша искренняя реакция. Примерное время: 40–50 минут. По завершении вы сразу увидите результаты по каждой методике.</div>
+  </div>
+  <div class="card">
+    <div class="qlabel">Общая информация</div>
+    <div class="metag">
+      <div class="mf"><label>Код участника (придумайте сами)</label><input class="inp" id="m-code" type="text" placeholder="Например: АМ-03"/></div>
+      <div class="mf"><label>Курс обучения</label><input class="inp" id="m-year" type="text" placeholder="Например: 3 курс"/></div>
+      <div class="mf">
+        <label>Этап диагностики</label>
+        <div class="rgroup">
+          <label class="ropt"><input type="radio" name="stage" value="before"> До прохождения курса</label>
+          <label class="ropt"><input type="radio" name="stage" value="after"> После прохождения курса</label>
+        </div>
+      </div>
+      <div class="mf">
+        <label>Опыт личной терапии</label>
+        <div class="rgroup">
+          <label class="ropt"><input type="radio" name="therapy" value="yes"> Да</label>
+          <label class="ropt"><input type="radio" name="therapy" value="no"> Нет</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="navrow">
+    <div class="dots">
+      <div class="dot active" id="d0"></div><div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div><div class="dot" id="d4"></div><div class="dot" id="d5"></div>
+    </div>
+    <button class="btnp" id="btn-start">Начать →</button>
+  </div>
+</div>
+
+<!-- SEC 1: КТО Я -->
+<div class="sec" id="sec-1">
+  <div class="sechdr">
+    <div class="secnum">Раздел 1 · Методика «Кто Я?» (М. Кун, Т. Макпартленд)</div>
+    <div class="sectitle">Образ себя</div>
+    <div class="secdesc">В течение 12 минут дайте как можно больше ответов на вопрос «Кто Я?». Каждый ответ — с новой строки. Отвечайте так, как вам хочется — правильных и неправильных ответов нет. После этого для каждой характеристики поставьте знак оценки: <b>+</b> (нравится), <b>−</b> (не нравится), <b>±</b> (и нравится, и нет), <b>?</b> (не знаю).</div>
+  </div>
+  <div class="card">
+    <div class="qlabel">Ответы на вопрос «Кто Я?» с оценкой каждой характеристики</div>
+    <div class="wai-grid" id="wai-grid"></div>
+    <button class="btns" id="btn-addwai" style="margin-top:1rem;font-size:13px">+ Добавить строку</button>
+  </div>
+  <div class="card">
+    <span class="qnum">Дополнительный вопрос</span>
+    <div class="qlabel">Представьте себя через 5 лет как практикующего психолога-консультанта. Какие три слова или образа приходят первыми?</div>
+    <textarea id="wai-future" placeholder="Напишите свободно..."></textarea>
+  </div>
+  <div class="card">
+    <span class="qnum">Рефлексия процесса</span>
+    <div class="qlabel">Насколько легко или трудно вам было отвечать? Какие эмоции возникали?</div>
+    <textarea id="wai-reflect" placeholder="Ваши наблюдения..."></textarea>
+  </div>
+  <div class="navrow">
+    <button class="btns" id="btn-1-back">← Назад</button>
+    <button class="btnp" id="btn-1-next">Следующий раздел →</button>
+  </div>
+</div>
+
+<!-- SEC 2: МИС -->
+<div class="sec" id="sec-2">
+  <div class="sechdr">
+    <div class="secnum">Раздел 2 · МИС — Методика исследования самоотношения (С.Р. Пантилеев)</div>
+    <div class="sectitle">Самоотношение</div>
+    <div class="secdesc">Прочитайте каждое суждение. Если вы согласны — выберите «Да», если не согласны — «Нет». Работайте быстро, не пропускайте вопросы. Отвечайте искренне.</div>
+  </div>
+  <div id="mis-container"></div>
+  <div class="navrow">
+    <button class="btns" id="btn-2-back">← Назад</button>
+    <button class="btnp" id="btn-2-next">Следующий раздел →</button>
+  </div>
+</div>
+
+<!-- SEC 3: КАРПОВ -->
+<div class="sec" id="sec-3">
+  <div class="sechdr">
+    <div class="secnum">Раздел 3 · Методика диагностики рефлексивности (А.В. Карпов)</div>
+    <div class="sectitle">Рефлексивность</div>
+    <div class="secdesc">Оцените каждое утверждение по шкале от 1 до 7. Не задумывайтесь подолгу — правильных и неправильных ответов нет.</div>
+  </div>
+  <div id="karp-container"></div>
+  <div class="navrow">
+    <button class="btns" id="btn-3-back">← Назад</button>
+    <button class="btnp" id="btn-3-next">Следующий раздел →</button>
+  </div>
+</div>
+
+<!-- SEC 4: ШКАЛА ЭКЗИСТЕНЦИИ -->
+<div class="sec" id="sec-4">
+  <div class="sechdr">
+    <div class="secnum">Раздел 4 · Шкала экзистенции (А. Лэнгле, К. Орглер)</div>
+    <div class="sectitle">Экзистенциальная исполненность</div>
+    <div class="secdesc">Насколько вам подходит каждое высказывание? Выберите один из шести вариантов ответа.</div>
+  </div>
+  <div id="ex-container"></div>
+  <div class="navrow">
+    <button class="btns" id="btn-4-back">← Назад</button>
+    <button class="btnp" id="btn-4-next">Следующий раздел →</button>
+  </div>
+</div>
+
+<!-- SEC 5: НП -->
+<div class="sec" id="sec-5">
+  <div class="sechdr">
+    <div class="secnum">Раздел 5 · Авторская методика незаконченных предложений</div>
+    <div class="sectitle">Профессиональное самопонимание</div>
+    <div class="secdesc">Продолжите каждое предложение. Пишите первое, что приходит в голову — не обдумывая долго. Здесь нет правильных ответов, важно ваше живое ощущение.</div>
+  </div>
+  <div id="np-container"></div>
+  <div class="navrow">
+    <button class="btns" id="btn-5-back">← Назад</button>
+    <button class="btnok" id="btn-submit">Завершить и увидеть результаты ✓</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="resscreen" id="resscreen">
+  <div class="reshdr">
+    <div class="restitle">Ваши результаты</div>
+    <div class="ressub" id="res-meta"></div>
+  </div>
+  <div class="resbody" id="res-body"></div>
+  <div style="padding:0 1.75rem 1.75rem">
     <button class="dlbtn" id="btn-dl">Скачать результаты (.txt)</button>
     <div id="txt-export" style="display:none;margin-top:1rem">
       <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Если скачивание не работает — скопируйте текст ниже и отправьте исследователю:</div>
