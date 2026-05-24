@@ -750,23 +750,19 @@ function submit(){
   var mis2=scoreMIS();
   var karp2=scoreKarpov();
   var ex2=scoreEx();
-  var payload={
+
+  // Собираем все данные в плоский объект (Google Apps Script принимает через URLSearchParams)
+  var flat={
     date:new Date().toLocaleDateString('ru-RU'),
     code:document.getElementById('m-code').value||'—',
     year:document.getElementById('m-year').value||'—',
     stage:getR('stage')==='before'?'До курса':'После курса',
     therapy:getR('therapy')==='yes'?'Да':'Нет',
-    // Кто Я
     wai_future:document.getElementById('wai-future')?.value||'',
     wai_reflect:document.getElementById('wai-reflect')?.value||'',
-    // МИС
-    mis_stens:mis2.stens,
-    mis_raw:mis2.raw,
-    // Карпов
     karpov_total:karp2.total,
     karpov_sten:karp2.sten,
     karpov_level:karp2.level,
-    // Шкала экзистенции
     ex_SD:ex2.scores.SD,
     ex_ST:ex2.scores.ST,
     ex_F:ex2.scores.F,
@@ -774,7 +770,6 @@ function submit(){
     ex_Person:ex2.Person,
     ex_Exist:ex2.Exist,
     ex_G:ex2.G,
-    // НП
     np_0:document.getElementById('np0')?.value||'',
     np_1:document.getElementById('np1')?.value||'',
     np_2:document.getElementById('np2')?.value||'',
@@ -783,23 +778,51 @@ function submit(){
     np_5:document.getElementById('np5')?.value||'',
     np_6:document.getElementById('np6')?.value||''
   };
-  // Кто Я ответы
-  for(var i=1;i<=waiCount;i++){
-    payload['wai_t_'+i]=document.getElementById('wai-t-'+i)?.value||'';
-    payload['wai_s_'+i]=document.getElementById('wai-s-'+i)?.value||'';
-  }
-  // Отправка
-  var statusEl=document.getElementById('send-status');
-  fetch(SCRIPT_URL,{
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  }).then(function(){
-    if(statusEl)statusEl.textContent='✓ Данные сохранены в базу исследования';
-  }).catch(function(){
-    if(statusEl)statusEl.textContent='Не удалось отправить данные автоматически — используйте кнопку скачать.';
+  // МИС
+  var misScaleNames=['Закрытость','Самоуверенность','Саморуководство','Отражённое самоотношение','Самоценность','Самопринятие','Самопривязанность','Внутренняя конфликтность','Самообвинение'];
+  misScaleNames.forEach(function(sc){
+    flat['mis_sten_'+sc]=mis2.stens[sc];
+    flat['mis_raw_'+sc]=mis2.raw[sc];
   });
+  // Кто Я
+  for(var i=1;i<=waiCount;i++){
+    flat['wai_t_'+i]=document.getElementById('wai-t-'+i)?.value||'';
+    flat['wai_s_'+i]=document.getElementById('wai-s-'+i)?.value||'';
+  }
+
+  // Отправка через скрытый iframe + форму (обходит CORS)
+  var statusEl=document.getElementById('send-status');
+  try{
+    var iframe=document.createElement('iframe');
+    iframe.name='hidden_iframe';
+    iframe.style.display='none';
+    document.body.appendChild(iframe);
+
+    var form=document.createElement('form');
+    form.method='POST';
+    form.action=SCRIPT_URL;
+    form.target='hidden_iframe';
+    form.style.display='none';
+
+    // Передаём данные как один JSON-параметр
+    var input=document.createElement('input');
+    input.type='hidden';
+    input.name='data';
+    input.value=JSON.stringify(flat);
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(function(){
+      document.body.removeChild(form);
+      document.body.removeChild(iframe);
+    },3000);
+
+    if(statusEl)statusEl.textContent='✓ Данные сохранены в базу исследования';
+  }catch(err){
+    if(statusEl)statusEl.textContent='Не удалось отправить автоматически — используйте кнопку скачать.';
+  }
 }
 
 // ======= BIND BUTTONS =======
